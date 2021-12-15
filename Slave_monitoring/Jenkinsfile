@@ -1,0 +1,24 @@
+def node_monitor(){
+    def jenkins = Jenkins.instance
+    HashMap<String,String> offline_slaves=new HashMap<String,String>();
+    for (int i = 0; i < Testing_slaves.split(",").length; i++) {
+        for ( agent in jenkins.getNodes()){
+            if(agent.getNodeName() ==Testing_slaves.split(",")[i].trim()){
+                if(agent.computer.environment.get("PATH")==null || agent.computer.isOffline() ){
+                    offline_slaves.put(agent.getNodeName(), agent.getNodeDescription())
+                }
+                break;
+            }
+        }
+    }
+    return offline_slaves
+}
+node{
+    stage("Monitoring"){
+        HashMap<String, String> slaves_off=node_monitor()
+        if(slaves_off.size()){
+            println slaves_off
+            emailext body: "Please check the slaves \n*******\n ${slaves_off}\n*********\n", subject: "${slaves_off.keySet()}", to: 'xxx@org.com'
+        }
+    }
+}

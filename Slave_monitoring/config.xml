@@ -1,0 +1,23 @@
+<flow-definition plugin="workflow-job@2.40">
+<actions/>
+<description/>
+<keepDependencies>false</keepDependencies>
+<properties>
+<hudson.model.ParametersDefinitionProperty>
+<parameterDefinitions>
+<hudson.model.StringParameterDefinition>
+<name>Testing_slaves</name>
+<description/>
+<defaultValue>My_windows_node, vm2</defaultValue>
+<trim>false</trim>
+</hudson.model.StringParameterDefinition>
+</parameterDefinitions>
+</hudson.model.ParametersDefinitionProperty>
+</properties>
+<definition class="org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition" plugin="workflow-cps@2.90">
+<script>def node_monitor(){ def jenkins = Jenkins.instance HashMap<String,String> offline_slaves=new HashMap<String,String>(); for (int i = 0; i < Testing_slaves.split(",").length; i++) { for ( agent in jenkins.getNodes()){ if(agent.getNodeName() ==Testing_slaves.split(",")[i].trim()){ if(agent.computer.environment.get("PATH")==null || agent.computer.isOffline() ){ offline_slaves.put(agent.getNodeName(), agent.getNodeDescription()) } break; } } } return offline_slaves } node{ stage("Monitoring"){ HashMap<String, String> slaves_off=node_monitor() if(slaves_off.size()){ println slaves_off emailext body: "Please check the slaves \n*******\n ${slaves_off}\n*********\n", subject: "${slaves_off.keySet()}", to: 'xxx@org.com' } } }</script>
+<sandbox>false</sandbox>
+</definition>
+<triggers/>
+<disabled>false</disabled>
+</flow-definition>
