@@ -1,0 +1,2 @@
+[devservers]
+ansi_slave ansible_ssh_host=104.211.223.137 ansible_ssh_user=ansible

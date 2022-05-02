@@ -1,0 +1,65 @@
+- name: check_system_distribution
+  set_fact: 
+    mydist: "{{ 'rhel' if(ansible_distribution == 'Red Hat Enterprise Linux') else (ansible_distribution | lower)}}"
+- debug: 
+    msg: "{{ mydist }}" 
+- name: adding_rpm_key
+  rpm_key:
+    key: "https://download.docker.com/linux/{{ mydist }}/gpg"
+    state: present
+- name: adding repo to repo.d list
+  yum_repository:
+    name: docker
+    description: docker repos
+    baseurl: "https://download.docker.com/linux/{{ mydist }}/$releasever/$basearch/stable"
+    enabled: true
+    gpgcheck: true
+    gpgkey: "https://download.docker.com/linux/{{ mydist }}/gpg"
+
+- name: install docker
+  yum:
+    name: 
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
+    state: latest
+    update_cache: true
+
+- name: start docker
+  service: 
+    name: "docker"
+    enabled: true
+    state: started
+- block: 
+    - name: get latest docker compose version
+      shell:
+        cmd: curl --silent 'https://api.github.com/repos/docker/compose/releases/latest' |  grep '"tag_name":' | cut -d '"' -f 4
+      register: docker_compose_latest_version
+      changed_when: false
+      args:
+        warn: no
+    - set_fact:
+        docker_compose_version: "{{ docker_compose_latest_version.stdout }}"
+          
+        when:
+          - docker_compose_latest_version.stdout is defined
+    
+    
+
+- name: install docker-compose
+  get_url: 
+    url: "https://github.com/docker/compose/releases/download/{{ docker_compose_version }}/docker-compose-{{ ansible_system }}-{{ ansible_userspace_architecture }}"
+    dest: /usr/local/bin/docker-compose
+    mode: 'a+x'
+        
+
+- name: add-docker-compose to bin
+  file:
+    src: /usr/local/bin/docker-compose
+    dest: /usr/bin/docker-compose
+    state: link
+        
+
+- name: if-dock-installed
+  shell: "docker version;docker info" 
+ 

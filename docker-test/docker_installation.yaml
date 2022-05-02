@@ -1,0 +1,12 @@
+---
+- name: docker_check
+  hosts: devservers
+  become: yes
+  become_method: sudo
+  vars_files:
+    - secret
+  tasks:
+    - name: docker-install
+      include: docker_thread.yaml
+ 
+
